@@ -1,5 +1,6 @@
 """Оркестратор пайплайна HH Outreach Parser."""
-import argparse, json, logging, os
+import argparse, json, logging, os, sys
+sys.stdout.reconfigure(encoding="utf-8")
 from config import RESPONSES_JSON, ENRICHED_JSON
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")

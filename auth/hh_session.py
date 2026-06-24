@@ -5,15 +5,18 @@ from config import STORAGE_STATE, DATA_DIR
 
 
 def login_and_save():
-    """Открыть браузер, дать пользователю залогиниться вручную, сохранить state."""
+    """Открыть браузер, дождаться ручного входа — сохранить storage_state."""
     os.makedirs(DATA_DIR, exist_ok=True)
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
         ctx = browser.new_context()
         page = ctx.new_page()
         page.goto("https://hh.ru/account/login")
-        print("\n>>> Залогинься в hh.ru в открытом окне.")
-        input(">>> Когда увидишь свой личный кабинет — нажми ENTER здесь...")
+        print("\n>>> Залогинься в hh.ru в открытом окне. Ожидаю входа...")
+        page.wait_for_function(
+            "window.location.href.indexOf('/account/login') === -1",
+            timeout=0,
+        )
         ctx.storage_state(path=STORAGE_STATE)
         print(f">>> Сессия сохранена: {STORAGE_STATE}")
         browser.close()

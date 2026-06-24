@@ -15,6 +15,8 @@ MIN_DELAY = float(os.getenv("MIN_DELAY", "2"))
 MAX_DELAY = float(os.getenv("MAX_DELAY", "5"))
 MAX_PAGES = int(os.getenv("MAX_PAGES", "200"))
 
+VALIDATE_MX = os.getenv("VALIDATE_MX", "1") == "1"
+
 # Файлы данных
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 STORAGE_STATE = os.path.join(DATA_DIR, "hh_state.json")
