@@ -1,0 +1,8 @@
+crawlee[playwright]>=0.4.0
+playwright>=1.45
+gspread>=6.0
+google-auth>=2.30
+dnspython>=2.6
+python-dotenv>=1.0
+tqdm>=4.66
+beautifulsoup4>=4.12
