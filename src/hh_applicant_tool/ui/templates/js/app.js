@@ -884,3 +884,29 @@ window.addEventListener('pywebviewready', () => {
     loadPresetsList();
     loadLastUsed();
 });
+
+async function runContacts() {
+  const limit = parseInt(document.getElementById('contacts-limit').value || '0', 10);
+  const toSheets = document.getElementById('contacts-sheets').checked;
+  const status = document.getElementById('contacts-status');
+  const table = document.getElementById('contacts-table');
+  status.textContent = 'Выполняется... это может занять время.';
+  table.innerHTML = '';
+  try {
+    const res = await pywebview.api.run_contacts(limit, toSheets);
+    if (res.status !== 'ok') {
+      status.textContent = 'Ошибка: ' + (res.message || 'неизвестно');
+      return;
+    }
+    status.textContent =
+      `Готово: ${res.with_contacts} из ${res.total} с контактами. Google Sheets: ${res.sheets}.`;
+    let html = '<tr><th>Компания</th><th>Сайт</th><th>Email</th><th>Telegram</th></tr>';
+    for (const row of res.sample) {
+      html += `<tr><td>${row.company||''}</td><td>${row.website||''}</td>` +
+              `<td>${row.emails||''}</td><td>${row.telegrams||''}</td></tr>`;
+    }
+    table.innerHTML = html;
+  } catch (e) {
+    status.textContent = 'Ошибка вызова: ' + e;
+  }
+}

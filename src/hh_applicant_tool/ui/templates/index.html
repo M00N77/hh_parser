@@ -20,6 +20,7 @@
             <a class="sidebar-link" data-section="resumes" onclick="navigate('resumes')">&#128196; Резюме</a>
             <a class="sidebar-link" data-section="negotiations" onclick="navigate('negotiations')">&#128172; Отклики</a>
             <a class="sidebar-link" data-section="statistics" onclick="navigate('statistics')">&#128202; Статистика</a>
+            <a class="sidebar-link" data-section="contacts" onclick="navigate('contacts')">📇 Контакты</a>
             <a class="sidebar-link" data-section="settings" onclick="navigate('settings')">&#9881;&#65039; Настройки</a>
         </nav>
         <div class="px-4 py-3 border-t border-gray-100 text-xs text-gray-400">v UI</div>
@@ -494,6 +495,18 @@
             </div>
         </div>
 
+        <!-- ===== Контакты ===== -->
+        <div id="contacts" class="section" style="display:none">
+          <h2>Контакты (email + Telegram)</h2>
+          <p>Берёт твои отклики из базы и ищет почты и телеграмы на сайтах компаний.</p>
+          <label><input type="number" id="contacts-limit" value="10" min="0" style="width:90px"> лимит (0 = все)</label>
+          <label style="margin-left:12px"><input type="checkbox" id="contacts-sheets"> выгрузить в Google Sheets</label>
+          <div style="margin:12px 0">
+            <button onclick="runContacts()">▶️ Собрать контакты</button>
+          </div>
+          <div id="contacts-status"></div>
+          <table id="contacts-table" border="1" cellpadding="6" style="border-collapse:collapse;width:100%;margin-top:12px"></table>
+        </div>
     </main>
 
     <!-- Toast -->

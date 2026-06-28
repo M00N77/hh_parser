@@ -293,6 +293,59 @@ class Api:
             logger.error("get_negotiations_from_db error: %s", e)
             return []
 
+    def run_contacts(self, limit: int = 0, to_sheets: bool = False) -> dict:
+        """Прогнать наш парсер контактов (email+telegram) по откликам из БД."""
+        import os, sys, json
+        root = os.environ.get("HH_PARSER_ROOT") or os.getcwd()
+        if root not in sys.path:
+            sys.path.insert(0, root)
+        try:
+            rows = self.get_negotiations_from_db()
+            responses = [{
+                "company": r.get("employer_name") or "",
+                "vacancy": r.get("vacancy_name") or "",
+                "vacancy_url": r.get("vacancy_url") or "",
+                "employer_url": "",
+                "hh_contact": "",
+            } for r in rows if r.get("vacancy_url")]
+            if limit:
+                responses = responses[:int(limit)]
+
+            from crawlers.company_site import enrich
+            enriched = enrich(responses)
+
+            sheets_status = "skipped"
+            if to_sheets:
+                try:
+                    from storage.sheets import write_rows
+                    write_rows(enriched)
+                    sheets_status = "ok"
+                except Exception as e:
+                    sheets_status = f"error: {e}"
+
+            with_contacts = sum(
+                1 for d in enriched if d.get("emails") or d.get("telegrams")
+            )
+            sample = [
+                {
+                    "company": d.get("company", ""),
+                    "website": d.get("website", ""),
+                    "emails": "; ".join(d.get("emails", [])),
+                    "telegrams": "; ".join(d.get("telegrams", [])),
+                }
+                for d in enriched[:100]
+            ]
+            return {
+                "status": "ok",
+                "total": len(enriched),
+                "with_contacts": with_contacts,
+                "sheets": sheets_status,
+                "sample": sample,
+            }
+        except Exception as e:
+            logger.error("run_contacts error: %s", e)
+            return {"status": "error", "message": str(e)}
+
     def refresh_negotiations(self, status: str = "active") -> dict:
         try:
             from ..storage.models.negotiation import NegotiationModel
