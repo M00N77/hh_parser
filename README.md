@@ -34,3 +34,16 @@ hh_parser/
 ├── mailer/sender.py        # SMTP
 └── data/                   # storage_state.json и др.
 ```
+
+## Полный цикл (pipeline)
+Один прогон: автокликер откликается на вакансии -> отклики тянутся через 
+официальный API hh -> парсятся сайты компаний -> извлекаются email/telegram 
+-> запись в Google Sheets.
+
+```powershell
+# Безопасно (автокликер в dry-run, реальных откликов НЕ будет):
+python main.py --phase pipeline --search "fullstack разработчик" --pages 1
+
+# Реальные отклики:
+python main.py --phase pipeline --search "fullstack разработчик" --pages 2 --apply-real 
+```

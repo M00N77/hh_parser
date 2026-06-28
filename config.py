@@ -26,6 +26,10 @@ ENRICHED_JSON = os.path.join(DATA_DIR, "enriched.json")
 # Мусорные домены/адреса для отсева email
 EMAIL_BLACKLIST_DOMAINS = {
     "example.com", "sentry.io", "wixpress.com", "domain.com",
-    "email.com", "yourdomain.com", "test.com",
+    "email.com", "yourdomain.com", "test.com", "mysite.com",
+    "site.com", "company.com", "mail.com", "your-domain.com",
 }
-EMAIL_BLACKLIST_PREFIX = {"no-reply", "noreply", "info@example"}
+EMAIL_BLACKLIST_PREFIX = {
+    "no-reply", "noreply", "info@example", "example", "test@",
+    "your", "username", "user@", "name@", "email@",
+}

@@ -1,12 +1,16 @@
 import re
 
-# t.me/<name> или telegram.me/<name>
 TME_RE = re.compile(r"(?:https?://)?(?:t|telegram)\.me/([a-zA-Z0-9_]{4,32})", re.I)
-# @nickname (5-32 символа, по правилам тг минимум 5 после @)
 NICK_RE = re.compile(r"(?<![\w/@])@([a-zA-Z][a-zA-Z0-9_]{4,31})\b")
 
-# слова-ловушки, которые не являются тг-никами
-STOP = {"gmail", "mail", "yandex", "outlook", "icloud", "example", "media", "support"}
+# CSS at-rules, html-атрибуты и прочий технический мусор — не телеграм-ники
+STOP = {
+    "gmail", "mail", "yandex", "outlook", "icloud", "example", "media", "support",
+    "keyframes", "context", "supports", "container", "forms", "graph", "import",
+    "charset", "namespace", "font", "page", "media", "screen", "print", "layer",
+    "property", "scope", "starting", "viewport", "abcdefghijklmnopqrstuvwxyz",
+    "false", "true", "null", "function", "return", "string", "object",
+}
 
 def extract_telegrams(text: str) -> set:
     found = set()
@@ -15,7 +19,11 @@ def extract_telegrams(text: str) -> set:
             continue
         found.add("@" + name.lower())
     for name in NICK_RE.findall(text or ""):
-        if name.lower() in STOP:
+        low = name.lower()
+        if low in STOP:
             continue
-        found.add("@" + name.lower())
+        # отсеять «алфавитные» последовательности типа abcdef
+        if low in "abcdefghijklmnopqrstuvwxyz":
+            continue
+        found.add("@" + low)
     return found

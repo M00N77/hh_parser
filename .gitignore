@@ -6,3 +6,4 @@ __pycache__/
 data/
 storage_state.json
 google_creds.json
+hh-applicant-tool/
