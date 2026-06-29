@@ -1023,7 +1023,7 @@ class Operation(BaseOperation):
                             "Мое резюме: "
                             + message_placeholders["resume_title"]
                         )
-                        logger.warning("LETTER MSG >>> %r", msg)
+                        logger.debug("prompt: %s", msg)
                         letter = self.cover_letter_ai.complete(msg)
                     else:
                         letter = (
