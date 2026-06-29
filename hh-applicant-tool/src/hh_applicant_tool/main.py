@@ -347,14 +347,30 @@ class HHApplicantTool(MegaTool):
         
         config_section = config_sections[purpose]
         c = self.config.get(config_section, {})
-        
+
+        base_url = c.get("base_url") or ""
+        provider = (c.get("provider") or "").strip().lower()
+        if not provider and base_url.lower() in ("g4f", "g4f://", "g4f:"):
+            provider = "g4f"
+
+        if provider == "g4f":
+            model = c.get("model") or "gpt-4o-mini"
+            return ai.ChatG4F(
+                api_key=c.get("api_key", ""),
+                model=model,
+                temperature=c.get("temperature", 0.0),
+                max_completion_tokens=c.get("max_completion_tokens", 1000),
+                system_prompt=system_prompt,
+                base_url=base_url,
+                rate_limit=c.get("rate_limit", 40),
+            )
+
         api_key = c.get("api_key")
         if not api_key:
             raise ValueError(
                 f"API-ключ не задан. Укажите 'api_key' в секции '{config_section}' конфигурации."
             )
 
-        base_url = c.get("base_url")
         if not base_url:
             raise ValueError(
                 f"Параметр 'base_url' обязателен для AI-конфигурации в секции '{config_section}'. "
@@ -371,7 +387,7 @@ class HHApplicantTool(MegaTool):
                 "Примеры: 'gpt-4o-mini', 'gpt-3.5-turbo', 'openai/gpt-4'",
                 config_section,
             )
-    
+
         return ai.ChatOpenAI(
             api_key=api_key,
             model=model,

@@ -95,8 +95,8 @@ class Api:
                 self._window.evaluate_js(
                     f"updateProgress({current}, {total}, {safe_msg})"
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("_send_progress error: %s", e)
 
     def _send_auth_event(self, event: str, message: str = "") -> None:
         if self._window:
@@ -106,8 +106,8 @@ class Api:
                 self._window.evaluate_js(
                     f"onAuthEvent({safe_event}, {safe_msg})"
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("_send_auth_event error: %s", e)
 
     def _send_apply_event(self, event: str, data: dict | None = None) -> None:
         if self._window:
@@ -117,8 +117,8 @@ class Api:
                 self._window.evaluate_js(
                     f"onApplyEvent({safe_event}, {safe_data})"
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("_send_apply_event error: %s", e)
 
     def _send_contacts_event(self, event: str, data: dict | None = None) -> None:
         if self._window:
@@ -128,8 +128,8 @@ class Api:
                 self._window.evaluate_js(
                     f"onContactsEvent({safe_event}, {safe_data})"
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("_send_contacts_event error: %s", e)
 
     def _is_invalid_grant(self, exc: BaseException) -> bool:
         msg = str(exc).lower()

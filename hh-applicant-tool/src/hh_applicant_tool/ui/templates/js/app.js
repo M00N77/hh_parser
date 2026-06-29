@@ -542,25 +542,17 @@ async function startApply() {
     btnStop.classList.remove('hidden');
     progressSection.classList.remove('hidden');
     resetProgress();
+    _applyInProgress = true;
 
     const params = collectSearchParams();
 
-    try {
-        const result = await pywebview.api.apply_vacancies(params);
-        if (result.status !== 'started') {
-            showToast('Ошибка: ' + (result.message || 'неизвестная'), 'error');
-            btn.disabled = false;
-            btn.textContent = '▶ Запустить поиск и отклики';
-            btnStop.classList.add('hidden');
-            return;
-        }
-        _applyInProgress = true;
-    } catch (e) {
+    pywebview.api.apply_vacancies(params).catch(e => {
         showToast('Ошибка запуска: ' + e, 'error');
+        _applyInProgress = false;
         btn.disabled = false;
         btn.textContent = '▶ Запустить поиск и отклики';
         btnStop.classList.add('hidden');
-    }
+    });
 }
 
 function onApplyEvent(event, data) {
@@ -915,14 +907,9 @@ async function runContacts() {
   const table = document.getElementById('contacts-table');
   status.textContent = 'Выполняется... это может занять время.';
   table.innerHTML = '';
-  try {
-    const res = await pywebview.api.run_contacts(limit, toSheets);
-    if (res.status !== 'started') {
-      status.textContent = 'Ошибка: ' + (res.message || 'неизвестно');
-    }
-  } catch (e) {
+  pywebview.api.run_contacts(limit, toSheets).catch(e => {
     status.textContent = 'Ошибка вызова: ' + e;
-  }
+  });
 }
 
 function onContactsEvent(event, data) {
