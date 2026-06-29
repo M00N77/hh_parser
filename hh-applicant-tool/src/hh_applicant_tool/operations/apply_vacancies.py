@@ -488,13 +488,11 @@ class Operation(BaseOperation):
             try:
                 response = self.vacancy_filter_ai.complete(prompt).strip()
 
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(
-                        "AI %s ответ (попытка %d): %s",
-                        log_suffix,
-                        attempt + 1,
-                        response,
-                    )
+                logger.debug(
+                    "AI filter raw answer (попытка %d): %r",
+                    attempt,
+                    response,
+                )
 
                 result = self._parse_ai_json_response(response)
                 if result is not None:
@@ -507,11 +505,13 @@ class Operation(BaseOperation):
 
                 # Если не удалось распарсить JSON, повторяем запрос
                 logger.warning(
-                    "AI %s не дал валидный JSON для вакансии %s (попытка %d/%d)",
+                    "AI %s не дал валидный JSON для вакансии %s "
+                    "(попытка %d/%d). Ответ модели: %r",
                     log_suffix,
                     vacancy_name,
                     attempt + 1,
                     MAX_RETRIES,
+                    response,
                 )
                 continue
 
@@ -1004,8 +1004,18 @@ class Operation(BaseOperation):
                             "Название вакансии: "
                             + message_placeholders["vacancy_name"]
                         )
+                        key_skills = vacancy.get("key_skills")
+                        if key_skills:
+                            skills_str = ", ".join(
+                                s["name"] for s in key_skills if s.get("name")
+                            )
+                            if skills_str:
+                                msg += "\nКлючевые навыки вакансии: " + skills_str
+                        description = vacancy.get("description")
+                        if description:
+                            msg += "\nОписание вакансии: " + strip_tags(description)[:1500]
                         msg += (
-                            "Мое резюме: "
+                            "\nМое резюме: "
                             + message_placeholders["resume_title"]
                         )
                         logger.debug("prompt: %s", msg)
