@@ -1030,6 +1030,9 @@ class Operation(BaseOperation):
                             rand_text(self.cover_letter) % message_placeholders
                         )
 
+                    if letter:
+                        letter = letter.replace("—", "-").replace("–", "-")
+
                     logger.debug(letter)
 
                 logger.debug(
