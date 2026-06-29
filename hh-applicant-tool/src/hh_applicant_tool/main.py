@@ -362,7 +362,7 @@ class HHApplicantTool(MegaTool):
                 max_completion_tokens=c.get("max_completion_tokens", 1000),
                 system_prompt=system_prompt,
                 base_url=base_url,
-                rate_limit=c.get("rate_limit", 40),
+                rate_limit=c.get("rate_limit", 8),
             )
 
         api_key = c.get("api_key")
@@ -395,7 +395,7 @@ class HHApplicantTool(MegaTool):
             max_completion_tokens=c.get("max_completion_tokens", 1000),
             system_prompt=system_prompt,
             base_url=base_url,
-            rate_limit=c.get("rate_limit", 40),
+            rate_limit=c.get("rate_limit", 8),
             session=self.openai_session,
         )
 
