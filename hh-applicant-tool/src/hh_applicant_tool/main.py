@@ -352,6 +352,10 @@ class HHApplicantTool(MegaTool):
         provider = (c.get("provider") or "").strip().lower()
         if not provider and base_url.lower() in ("g4f", "g4f://", "g4f:"):
             provider = "g4f"
+        if not provider and ("/v1/messages" in base_url.lower()
+                              or "anthropic" in base_url.lower()
+                              or "openmodel.ai" in base_url.lower()):
+            provider = "anthropic"
 
         if provider == "g4f":
             model = c.get("model") or "gpt-4o-mini"
@@ -365,6 +369,24 @@ class HHApplicantTool(MegaTool):
                 rate_limit=c.get("rate_limit", 8),
             )
 
+        if provider == "anthropic":
+            api_key = c.get("api_key")
+            if not api_key:
+                raise ValueError(
+                    f"API-ключ не задан. Укажите 'api_key' в секции '{config_section}' конфигурации."
+                )
+            model = c.get("model") or "claude-3-5-haiku-latest"
+            return ai.ChatAnthropic(
+                api_key=api_key,
+                model=model,
+                temperature=c.get("temperature", 0.0),
+                max_completion_tokens=c.get("max_completion_tokens", 1000),
+                system_prompt=system_prompt,
+                base_url=base_url or "https://api.openmodel.ai/v1/messages",
+                rate_limit=c.get("rate_limit", 40),
+                session=self.openai_session,
+            )
+
         api_key = c.get("api_key")
         if not api_key:
             raise ValueError(
@@ -376,7 +398,8 @@ class HHApplicantTool(MegaTool):
                 f"Параметр 'base_url' обязателен для AI-конфигурации в секции '{config_section}'. "
                 "Примеры: OpenAI='https://api.openai.com/v1/chat/completions', "
                 "Ollama='http://localhost:11434/v1/chat/completions', "
-                "OpenRouter='https://openrouter.ai/api/v1/chat/completions'"
+                "OpenRouter='https://openrouter.ai/api/v1/chat/completions', "
+                "Anthropic/openmodel.ai='https://api.openmodel.ai/v1/messages'"
             )
 
         model = c.get("model")
