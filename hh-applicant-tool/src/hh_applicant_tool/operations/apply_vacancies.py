@@ -466,7 +466,7 @@ class Operation(BaseOperation):
         if full_vacancy:
             description = full_vacancy.get("description")
             if description:
-                parts.append(f"Описание: {strip_tags(description)[:1500]}")
+                parts.append(f"Описание: {strip_tags(description)}")
         else:
             if vacancy.get("id"):
                 key_skills = self._get_vacancy_key_skills(vacancy["id"])
