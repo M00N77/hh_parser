@@ -466,7 +466,7 @@ class Operation(BaseOperation):
         if full_vacancy:
             description = full_vacancy.get("description")
             if description:
-                parts.append(f"Описание: {strip_tags(description)}")
+                parts.append(f"Описание: {strip_tags(description)[:1500]}")
         else:
             if vacancy.get("id"):
                 key_skills = self._get_vacancy_key_skills(vacancy["id"])
@@ -999,23 +999,31 @@ class Operation(BaseOperation):
                     "response_letter_required"
                 ):
                     if self.cover_letter_ai:
-                        msg = self.message_prompt + "\n\n"
-                        msg += (
-                            "Название вакансии: "
-                            + message_placeholders["vacancy_name"]
+                        full_vacancy = None
+                        if vacancy.get("id"):
+                            try:
+                                full_vacancy = self.api_client.get(
+                                    f"/vacancies/{vacancy['id']}"
+                                )
+                                description = full_vacancy.get("description", "")
+                                if not description:
+                                    logger.debug(
+                                        "Описание вакансии %s пустое",
+                                        vacancy["id"],
+                                    )
+                            except Exception as e:
+                                logger.debug(
+                                    "Не удалось получить полную вакансию %s: %s",
+                                    vacancy["id"], e,
+                                )
+                        vacancy_context = self._build_vacancy_context(
+                            vacancy, full_vacancy=full_vacancy, include_full=True
                         )
-                        key_skills = vacancy.get("key_skills")
-                        if key_skills:
-                            skills_str = ", ".join(
-                                s["name"] for s in key_skills if s.get("name")
-                            )
-                            if skills_str:
-                                msg += "\nКлючевые навыки вакансии: " + skills_str
-                        description = vacancy.get("description")
-                        if description:
-                            msg += "\nОписание вакансии: " + strip_tags(description)[:1500]
+                        msg = self.message_prompt + "\n\n"
+                        if vacancy_context:
+                            msg += vacancy_context + "\n\n"
                         msg += (
-                            "\nМое резюме: "
+                            "Мое резюме: "
                             + message_placeholders["resume_title"]
                         )
                         logger.debug("prompt: %s", msg)
