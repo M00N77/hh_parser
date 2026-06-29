@@ -64,7 +64,7 @@ class ChatOpenAI:
                     + self._previous_request_time
                 )
                 if delay > 0:
-                    logger.debug("Wait %.2fs before OpenAI request", delay)
+                    logger.debug("Wait %.2fs before LLM request (%s)", delay, self.base_url)
                     time.sleep(delay)
 
             try:
@@ -96,7 +96,7 @@ class ChatOpenAI:
         return max(min_interval * (attempt + 1), 1.0)
 
     def complete(self, message: str) -> str:
-        """Генерация текста через OpenAI API"""
+        """Генерация текста через LLM API"""
         messages = []
 
         # Добавляем системный промпт только если он не пустой и не None
@@ -125,11 +125,12 @@ class ChatOpenAI:
 
             if response.status_code == 429:
                 if attempt >= self.max_retries:
-                    raise OpenAIError("OpenAI rate limit exceeded")
+                    raise OpenAIError(f"LLM endpoint ({self.base_url}) rate limit exceeded")
 
                 delay = self._get_retry_delay(response, attempt)
                 logger.warning(
-                    "OpenAI returned 429 Too Many Requests, retry in %.2fs",
+                    "LLM endpoint (%s) returned 429 Too Many Requests, retry in %.2fs",
+                    self.base_url,
                     delay,
                 )
                 time.sleep(delay)
@@ -154,7 +155,7 @@ class ChatOpenAI:
             except (KeyError, IndexError) as ex:
                 raise OpenAIError(f"Invalid response format: {ex}") from ex
 
-        raise OpenAIError("OpenAI request failed after retries")
+        raise OpenAIError(f"LLM endpoint ({self.base_url}) request failed after retries")
 
     # Этому методу тут не место. Мы решаем капчу hh.ru, а тут методы для OpenAI
     def solve_captcha(self, image_data: bytes) -> str:
@@ -206,11 +207,12 @@ class ChatOpenAI:
 
             if response.status_code == 429:
                 if attempt >= self.max_retries:
-                    raise OpenAIError("OpenAI rate limit exceeded")
+                    raise OpenAIError(f"LLM endpoint ({self.base_url}) rate limit exceeded")
 
                 delay = self._get_retry_delay(response, attempt)
                 logger.warning(
-                    "OpenAI returned 429 Too Many Requests, retry in %.2fs",
+                    "LLM endpoint (%s) returned 429 Too Many Requests, retry in %.2fs",
+                    self.base_url,
                     delay,
                 )
                 time.sleep(delay)
