@@ -80,6 +80,7 @@ class ChatG4F:
             else:
                 models_to_try = [self.model, fallback_model]
 
+            _last_ex = None
             for model_name in models_to_try:
                 kwargs = {
                     "model": model_name,
@@ -95,17 +96,20 @@ class ChatG4F:
                 try:
                     resp = Client(provider=provider).chat.completions.create(**kwargs)
                     content = resp.choices[0].message.content
+                    logger.debug("G4F <- raw response: %r", content)
                     if content and content.strip():
                         return content.strip()
                 except Exception as ex:
-                    logger.debug("G4F model %s failed: %s", model_name, ex)
+                    logger.debug("G4F model %s failed (%s): %s", model_name, type(ex).__name__, ex)
+                    _last_ex = ex
 
             delay = min(2 ** attempt, 15)
             logger.warning(
-                "G4F attempt %d/%d failed, retry in %ds",
+                "G4F attempt %d/%d failed (%s): %s",
                 attempt + 1,
                 self.max_retries,
-                delay,
+                type(_last_ex).__name__ if _last_ex is not None else "?",
+                _last_ex if _last_ex is not None else "",
             )
             if attempt < self.max_retries:
                 time.sleep(delay)
@@ -118,8 +122,7 @@ class ChatG4F:
             messages.append({"role": "system", "content": self.system_prompt})
         messages.append({"role": "user", "content": message})
 
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("G4F запрос: %s", message)
+        logger.debug("G4F -> model=%s, prompt=%r", self.model, message)
 
         return self._call(messages)
 

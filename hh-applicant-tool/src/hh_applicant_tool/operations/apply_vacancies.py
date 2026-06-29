@@ -529,32 +529,53 @@ class Operation(BaseOperation):
         return True
 
     def _parse_ai_json_response(self, response: str) -> bool | None:
-        response = response.strip().lower()
-
-        if response in ("да", "yes", "true"):
-            return True
-        if response in ("нет", "no", "false"):
-            return False
-
+        if not response:
+            return None
         import re
-
         from ..utils import json as utils_json
 
-        if response.startswith("```"):
-            response = re.sub(r"^```(?:json)?\s*", "", response)
-            response = re.sub(r"\s*```$", "", response)
+        text = response.strip()
+        low = text.lower()
 
-        json_match = re.search(
-            r'\{[^{}]*"suitable"\s*:\s*(true|false)[^{}]*\}',
-            response,
-            re.IGNORECASE,
-        )
-        if json_match:
+        # 1) Короткие прямые ответы (полное совпадение или начало фразы)
+        if low in ("да", "yes", "true", "1", "подходит", "suitable"):
+            return True
+        if low in ("нет", "no", "false", "0", "не подходит", "unsuitable"):
+            return False
+
+        # 2) Снять markdown-ограждение ```json ... ```
+        fence = re.search(r"```(?:json)?\s*(.*?)\s*```", text, re.DOTALL | re.IGNORECASE)
+        if fence:
+            text = fence.group(1).strip()
+
+        # 3) JSON-объект от первой { до последней } (допускает вложенность и др. ключи)
+        brace = re.search(r"\{.*\}", text, re.DOTALL)
+        if brace:
             try:
-                data = utils_json.loads(json_match.group(0))
-                return data.get("suitable")
+                data = utils_json.loads(brace.group(0))
+                if isinstance(data, dict) and "suitable" in data:
+                    val = data["suitable"]
+                    if isinstance(val, bool):
+                        return val
+                    if isinstance(val, str):
+                        return val.strip().lower() in ("true", "да", "yes", "1")
             except Exception:
                 pass
+
+        # 4) Голый ключ без полноценного JSON: suitable: true / "suitable" = false
+        bare = re.search(
+            r'"?suitable"?\s*[:=]\s*(true|false|да|нет|yes|no)', low
+        )
+        if bare:
+            return bare.group(1) in ("true", "да", "yes")
+
+        # 5) Фолбэк: однозначное упоминание true/false (или да/нет) во всём ответе
+        has_true = re.search(r"\b(true|да)\b", low)
+        has_false = re.search(r"\b(false|нет)\b", low)
+        if has_true and not has_false:
+            return True
+        if has_false and not has_true:
+            return False
 
         return None
 
@@ -601,9 +622,9 @@ class Operation(BaseOperation):
 4. Если данных мало:
    - ориентируйся на название роли
 
-Не пиши объяснения.
-Ответ строго JSON:
-{{"suitable": true}} или {{"suitable": false}}
+Ответь ОДНОЙ строкой строго в формате JSON, без markdown, без ```,
+без пояснений и текста до или после:
+{{"suitable": true}} либо {{"suitable": false}}
 
 Кандидат:
 {resume_analysis}
@@ -627,8 +648,9 @@ class Operation(BaseOperation):
 - если роли явно разные или совпадений по навыкам почти нет -> suitable = false
 - если данных мало -> ориентируйся только на явные совпадения, без фантазий
 
-Ответ только JSON:
-{{"suitable": true}} или {{"suitable": false}}
+Ответь ОДНОЙ строкой строго в формате JSON, без markdown, без ```,
+без пояснений и текста до или после:
+{{"suitable": true}} либо {{"suitable": false}}
 
 Кандидат:
 {resume_analysis}
