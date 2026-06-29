@@ -329,6 +329,18 @@ class Api:
                 sys.path.insert(0, root)
             try:
                 rows = self.get_negotiations_from_db()
+                if not rows:
+                    logger.warning(
+                        "CONTACTS: БД пустая, запускаю авто-синхронизацию откликов с hh.ru"
+                    )
+                    try:
+                        self.refresh_negotiations()
+                    except Exception as e:
+                        logger.error("CONTACTS: авто-синхронизация не удалась: %s", e)
+                    rows = self.get_negotiations_from_db()
+                logger.warning("CONTACTS: rows from DB = %d", len(rows))
+                if rows:
+                    logger.warning("CONTACTS: sample row = %r", rows[0])
                 responses = [{
                     "company": r.get("employer_name") or "",
                     "vacancy": r.get("vacancy_name") or "",
@@ -338,9 +350,11 @@ class Api:
                 } for r in rows if r.get("vacancy_url")]
                 if limit:
                     responses = responses[:int(limit)]
+                logger.warning("CONTACTS: responses with vacancy_url = %d", len(responses))
 
                 from crawlers.company_site import enrich
                 enriched = enrich(responses)
+                logger.warning("CONTACTS: enriched = %d", len(enriched))
 
                 sheets_status = "skipped"
                 if to_sheets:
@@ -385,7 +399,7 @@ class Api:
 
             count = 0
             for item in self._tool.get_negotiations(status):
-                model = NegotiationModel.from_dict(item)
+                model = NegotiationModel.from_api(item)
                 self._tool.storage.negotiations.save(model)
                 count += 1
             return {"status": "ok", "count": count}
