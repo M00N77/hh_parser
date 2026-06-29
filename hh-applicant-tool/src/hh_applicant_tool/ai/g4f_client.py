@@ -9,6 +9,15 @@ from .base import AIError
 logger = logging.getLogger(__package__)
 
 
+_GARBAGE_PATTERNS = [
+    "зарегистрируй",
+    "повторите свой запрос",
+    "register",
+    "subscription required",
+    "пожалуйста, зарегистрируйтесь",
+]
+
+
 class G4FError(AIError):
     pass
 
@@ -16,6 +25,7 @@ class G4FError(AIError):
 @dataclass
 class ChatG4F:
     api_key: str = ""
+    provider: str | None = None
 
     _: KW_ONLY
 
@@ -43,12 +53,17 @@ class ChatG4F:
 
     _PROVIDER_CACHE = None
 
-    @classmethod
-    def _get_provider(cls):
-        if cls._PROVIDER_CACHE is None:
+    def _get_provider(self):
+        if self.provider:
+            import g4f.Provider as P
+            resolved = getattr(P, self.provider, None)
+            if resolved is not None:
+                return resolved
+            logger.warning("G4F provider %r not found, fallback to default", self.provider)
+        if ChatG4F._PROVIDER_CACHE is None:
             from g4f.Provider.Perplexity import Perplexity
-            cls._PROVIDER_CACHE = Perplexity
-        return cls._PROVIDER_CACHE
+            ChatG4F._PROVIDER_CACHE = Perplexity
+        return ChatG4F._PROVIDER_CACHE
 
     @property
     def _min_request_interval(self) -> float:
@@ -88,17 +103,23 @@ class ChatG4F:
                     "temperature": self.temperature,
                     "max_tokens": self.max_completion_tokens,
                     "web_search": False,
+                    "provider": provider,
                 }
                 if image_data is not None:
                     kwargs["image"] = io.BytesIO(image_data)
                     kwargs["temperature"] = 0.0
                     kwargs["max_tokens"] = 20
                 try:
-                    resp = Client(provider=provider).chat.completions.create(**kwargs)
+                    resp = Client().chat.completions.create(**kwargs)
                     content = resp.choices[0].message.content
                     logger.debug("G4F <- raw response: %r", content)
-                    if content and content.strip():
-                        return content.strip()
+                    if content:
+                        content = content.strip()
+                    if not content:
+                        raise ValueError("empty response")
+                    if any(p in content.lower() for p in _GARBAGE_PATTERNS):
+                        raise ValueError(f"garbage response: {content[:80]!r}")
+                    return content
                 except Exception as ex:
                     logger.debug("G4F model %s failed (%s): %s", model_name, type(ex).__name__, ex)
                     _last_ex = ex

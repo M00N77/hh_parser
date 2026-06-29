@@ -1000,33 +1000,30 @@ class Operation(BaseOperation):
                 ):
                     if self.cover_letter_ai:
                         full_vacancy = None
-                        if vacancy.get("id"):
-                            try:
-                                full_vacancy = self.api_client.get(
-                                    f"/vacancies/{vacancy['id']}"
-                                )
-                                description = full_vacancy.get("description", "")
-                                if not description:
-                                    logger.debug(
-                                        "Описание вакансии %s пустое",
-                                        vacancy["id"],
-                                    )
-                            except Exception as e:
-                                logger.debug(
-                                    "Не удалось получить полную вакансию %s: %s",
-                                    vacancy["id"], e,
-                                )
+                        try:
+                            full_vacancy = self.api_client.get(
+                                f"/vacancies/{vacancy['id']}"
+                            )
+                        except Exception as ex:
+                            logger.warning(
+                                "Не удалось загрузить полную вакансию %s: %s",
+                                vacancy.get("id"),
+                                ex,
+                            )
+
                         vacancy_context = self._build_vacancy_context(
-                            vacancy, full_vacancy=full_vacancy, include_full=True
+                            vacancy, full_vacancy, include_full=True
                         )
+                        if len(vacancy_context) > 1500:
+                            vacancy_context = vacancy_context[:1500]
+
                         msg = self.message_prompt + "\n\n"
-                        if vacancy_context:
-                            msg += vacancy_context + "\n\n"
+                        msg += vacancy_context + "\n\n"
                         msg += (
                             "Мое резюме: "
                             + message_placeholders["resume_title"]
                         )
-                        logger.debug("prompt: %s", msg)
+                        logger.warning("LETTER MSG >>> %r", msg)
                         letter = self.cover_letter_ai.complete(msg)
                     else:
                         letter = (
