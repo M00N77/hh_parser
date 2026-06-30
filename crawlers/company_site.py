@@ -139,6 +139,18 @@ def enrich(responses, limit=None):
         for i, r in enumerate(items, 1):
             company = r.get("company", "")
             employer_url = r.get("employer_url") or ""
+            vacancy_url = r.get("vacancy_url") or ""
+            if not employer_url and vacancy_url:
+                try:
+                    vac_company, vac_employer_url = company_and_site_from_vacancy(
+                        page, vacancy_url
+                    )
+                    if vac_company and not company:
+                        company = vac_company
+                    if vac_employer_url:
+                        employer_url = vac_employer_url
+                except Exception as e:
+                    print(f"  vacancy lookup err: {e}")
             domain = None
             emails, tgs = set(), set()
             try:
